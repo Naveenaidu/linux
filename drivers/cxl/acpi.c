@@ -207,7 +207,7 @@ static int match_add_root_ports(struct pci_dev *pdev, void *data)
 	if (type != PCI_EXP_TYPE_ROOT_PORT)
 		return 0;
 	if (pci_read_config_dword(pdev, pci_pcie_cap(pdev) + PCI_EXP_LNKCAP,
-				  &lnkcap) != PCIBIOS_SUCCESSFUL)
+				  &lnkcap))
 		return 0;
 
 	/* TODO walk DVSEC to find component register base */

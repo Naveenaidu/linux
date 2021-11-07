@@ -64,10 +64,10 @@ static int rz1000_fifo_disable(struct pci_dev *pdev)
 {
 	u16 reg;
 	/* Be exceptionally paranoid as we must be sure to apply the fix */
-	if (pci_read_config_word(pdev, 0x40, &reg) != 0)
+	if (pci_read_config_word(pdev, 0x40, &reg))
 		return -1;
 	reg &= 0xDFFF;
-	if (pci_write_config_word(pdev, 0x40, reg) != 0)
+	if (pci_write_config_word(pdev, 0x40, reg))
 		return -1;
 	printk(KERN_INFO DRV_NAME ": disabled chipset readahead.\n");
 	return 0;

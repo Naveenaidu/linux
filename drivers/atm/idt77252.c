@@ -3266,7 +3266,7 @@ static int init_card(struct atm_dev *dev)
 
 	/* Set PCI Retry-Timeout and TRDY timeout */
 	IPRINTK("%s: Checking PCI retries.\n", card->name);
-	if (pci_read_config_byte(pcidev, 0x40, &pci_byte) != 0) {
+	if (pci_read_config_byte(pcidev, 0x40, &pci_byte)) {
 		printk("%s: can't read PCI retry timeout.\n", card->name);
 		deinit_card(card);
 		return -1;
@@ -3274,7 +3274,7 @@ static int init_card(struct atm_dev *dev)
 	if (pci_byte != 0) {
 		IPRINTK("%s: PCI retry timeout: %d, set to 0.\n",
 			card->name, pci_byte);
-		if (pci_write_config_byte(pcidev, 0x40, 0) != 0) {
+		if (pci_write_config_byte(pcidev, 0x40, 0)) {
 			printk("%s: can't set PCI retry timeout.\n",
 			       card->name);
 			deinit_card(card);
@@ -3282,7 +3282,7 @@ static int init_card(struct atm_dev *dev)
 		}
 	}
 	IPRINTK("%s: Checking PCI TRDY.\n", card->name);
-	if (pci_read_config_byte(pcidev, 0x41, &pci_byte) != 0) {
+	if (pci_read_config_byte(pcidev, 0x41, &pci_byte)) {
 		printk("%s: can't read PCI TRDY timeout.\n", card->name);
 		deinit_card(card);
 		return -1;
@@ -3290,7 +3290,7 @@ static int init_card(struct atm_dev *dev)
 	if (pci_byte != 0) {
 		IPRINTK("%s: PCI TRDY timeout: %d, set to 0.\n",
 		        card->name, pci_byte);
-		if (pci_write_config_byte(pcidev, 0x41, 0) != 0) {
+		if (pci_write_config_byte(pcidev, 0x41, 0)) {
 			printk("%s: can't set PCI TRDY timeout.\n", card->name);
 			deinit_card(card);
 			return -1;

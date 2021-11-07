@@ -134,7 +134,7 @@ static int pci_vpd_wait(struct pci_dev *dev, bool set)
 	do {
 		ret = pci_user_read_config_word(dev, vpd->cap + PCI_VPD_ADDR,
 						&status);
-		if (ret < 0)
+		if (ret)
 			return ret;
 
 		if (!!(status & PCI_VPD_ADDR_F) == set)
@@ -191,14 +191,14 @@ static ssize_t pci_vpd_read(struct pci_dev *dev, loff_t pos, size_t count,
 
 		ret = pci_user_write_config_word(dev, vpd->cap + PCI_VPD_ADDR,
 						 pos & ~3);
-		if (ret < 0)
+		if (ret)
 			break;
 		ret = pci_vpd_wait(dev, true);
 		if (ret < 0)
 			break;
 
 		ret = pci_user_read_config_dword(dev, vpd->cap + PCI_VPD_DATA, &val);
-		if (ret < 0)
+		if (ret)
 			break;
 
 		skip = pos & 3;
@@ -242,11 +242,11 @@ static ssize_t pci_vpd_write(struct pci_dev *dev, loff_t pos, size_t count,
 	while (pos < end) {
 		ret = pci_user_write_config_dword(dev, vpd->cap + PCI_VPD_DATA,
 						  get_unaligned_le32(buf));
-		if (ret < 0)
+		if (ret)
 			break;
 		ret = pci_user_write_config_word(dev, vpd->cap + PCI_VPD_ADDR,
 						 pos | PCI_VPD_ADDR_F);
-		if (ret < 0)
+		if (ret)
 			break;
 
 		ret = pci_vpd_wait(dev, false);

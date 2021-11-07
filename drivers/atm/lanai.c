@@ -1097,7 +1097,7 @@ static void pcistatus_check(struct lanai_dev *lanai, int clearonly)
 	u16 s;
 	int result;
 	result = pci_read_config_word(lanai->pci, PCI_STATUS, &s);
-	if (result != PCIBIOS_SUCCESSFUL) {
+	if (result) {
 		printk(KERN_ERR DEV_LABEL "(itf %d): can't read PCI_STATUS: "
 		    "%d\n", lanai->number, result);
 		return;
@@ -1108,7 +1108,7 @@ static void pcistatus_check(struct lanai_dev *lanai, int clearonly)
 	if (s == 0)
 		return;
 	result = pci_write_config_word(lanai->pci, PCI_STATUS, s);
-	if (result != PCIBIOS_SUCCESSFUL)
+	if (result)
 		printk(KERN_ERR DEV_LABEL "(itf %d): can't write PCI_STATUS: "
 		    "%d\n", lanai->number, result);
 	if (clearonly)
@@ -1948,7 +1948,7 @@ static int lanai_pci_start(struct lanai_dev *lanai)
 		return result;
 	/* Set latency timer to zero as per lanai docs */
 	result = pci_write_config_byte(pci, PCI_LATENCY_TIMER, 0);
-	if (result != PCIBIOS_SUCCESSFUL) {
+	if (result) {
 		printk(KERN_ERR DEV_LABEL "(itf %d): can't write "
 		    "PCI_LATENCY_TIMER: %d\n", lanai->number, result);
 		return -EINVAL;

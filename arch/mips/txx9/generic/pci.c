@@ -61,8 +61,7 @@ int __init txx9_pci66_check(struct pci_controller *hose, int top_bus,
 		if (PCI_FUNC(pci_devfn))
 			continue;
 		if (early_read_config_word(hose, top_bus, current_bus,
-					   pci_devfn, PCI_VENDOR_ID, &vid) !=
-		    PCIBIOS_SUCCESSFUL)
+					   pci_devfn, PCI_VENDOR_ID, &vid))
 			continue;
 		if (vid == 0xffff)
 			continue;

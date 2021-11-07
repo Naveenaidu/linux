@@ -401,7 +401,7 @@ static int ns_init_card(int i, struct pci_dev *pcidev)
 
 	pci_set_master(pcidev);
 
-	if (pci_read_config_byte(pcidev, PCI_LATENCY_TIMER, &pci_latency) != 0) {
+	if (pci_read_config_byte(pcidev, PCI_LATENCY_TIMER, &pci_latency)) {
 		printk("nicstar%d: can't read PCI latency timer.\n", i);
 		error = 6;
 		ns_init_card_error(card, error);
@@ -413,7 +413,7 @@ static int ns_init_card(int i, struct pci_dev *pcidev)
 		       NS_PCI_LATENCY);
 		for (j = 1; j < 4; j++) {
 			if (pci_write_config_byte
-			    (pcidev, PCI_LATENCY_TIMER, NS_PCI_LATENCY) != 0)
+			    (pcidev, PCI_LATENCY_TIMER, NS_PCI_LATENCY))
 				break;
 		}
 		if (j == 4) {

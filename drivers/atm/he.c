@@ -995,23 +995,23 @@ static int he_start(struct atm_dev *dev)
 	 */
 
 	/* 4.3 pci bus controller-specific initialization */
-	if (pci_read_config_dword(pci_dev, GEN_CNTL_0, &gen_cntl_0) != 0) {
+	if (pci_read_config_dword(pci_dev, GEN_CNTL_0, &gen_cntl_0)) {
 		hprintk("can't read GEN_CNTL_0\n");
 		return -EINVAL;
 	}
 	gen_cntl_0 |= (MRL_ENB | MRM_ENB | IGNORE_TIMEOUT);
-	if (pci_write_config_dword(pci_dev, GEN_CNTL_0, gen_cntl_0) != 0) {
+	if (pci_write_config_dword(pci_dev, GEN_CNTL_0, gen_cntl_0)) {
 		hprintk("can't write GEN_CNTL_0.\n");
 		return -EINVAL;
 	}
 
-	if (pci_read_config_word(pci_dev, PCI_COMMAND, &command) != 0) {
+	if (pci_read_config_word(pci_dev, PCI_COMMAND, &command)) {
 		hprintk("can't read PCI_COMMAND.\n");
 		return -EINVAL;
 	}
 
 	command |= (PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INVALIDATE);
-	if (pci_write_config_word(pci_dev, PCI_COMMAND, command) != 0) {
+	if (pci_write_config_word(pci_dev, PCI_COMMAND, command)) {
 		hprintk("can't enable memory.\n");
 		return -EINVAL;
 	}
