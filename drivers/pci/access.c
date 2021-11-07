@@ -39,12 +39,12 @@ int noinline pci_bus_read_config_##size \
 	int res;							\
 	unsigned long flags;						\
 	u32 data = 0;							\
-	if (PCI_##size##_BAD) return PCIBIOS_BAD_REGISTER_NUMBER;	\
+	if (PCI_##size##_BAD) return pcibios_err_to_errno(PCIBIOS_BAD_REGISTER_NUMBER);	\
 	pci_lock_config(flags);						\
 	res = bus->ops->read(bus, devfn, pos, len, &data);		\
 	*value = (type)data;						\
 	pci_unlock_config(flags);					\
-	return res;							\
+	return pcibios_err_to_errno(res);							\
 }
 
 #define PCI_OP_WRITE(size, type, len) \
@@ -53,11 +53,11 @@ int noinline pci_bus_write_config_##size \
 {									\
 	int res;							\
 	unsigned long flags;						\
-	if (PCI_##size##_BAD) return PCIBIOS_BAD_REGISTER_NUMBER;	\
+	if (PCI_##size##_BAD) return pcibios_err_to_errno(PCIBIOS_BAD_REGISTER_NUMBER);	\
 	pci_lock_config(flags);						\
 	res = bus->ops->write(bus, devfn, pos, len, value);		\
 	pci_unlock_config(flags);					\
-	return res;							\
+	return pcibios_err_to_errno(res);							\
 }
 
 PCI_OP_READ(byte, u8, 1)
