@@ -281,10 +281,10 @@ snd_vortex_probe(struct pci_dev *pci, const struct pci_device_id *pci_id)
 
 	// (5)
 	err = pci_read_config_word(pci, PCI_DEVICE_ID, &chip->device);
-	if (err < 0)
+	if (err)
 		return err;
 	err = pci_read_config_word(pci, PCI_VENDOR_ID, &chip->vendor);
-	if (err < 0)
+	if (err)
 		return err;
 	chip->rev = pci->revision;
 #ifdef CHIP_AU8830
