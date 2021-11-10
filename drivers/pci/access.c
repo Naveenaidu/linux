@@ -39,7 +39,7 @@ int noinline pci_bus_read_config_##size \
 	int res;							\
 	unsigned long flags;						\
 	u32 data = 0;							\
-	if (PCI_##size##_BAD) return pcibios_err_to_errno(PCIBIOS_BAD_REGISTER_NUMBER);	\
+	if (PCI_##size##_BAD) return -EINVAL;	\
 	pci_lock_config(flags);						\
 	res = bus->ops->read(bus, devfn, pos, len, &data);		\
 	*value = (type)data;						\
@@ -53,7 +53,7 @@ int noinline pci_bus_write_config_##size \
 {									\
 	int res;							\
 	unsigned long flags;						\
-	if (PCI_##size##_BAD) return pcibios_err_to_errno(PCIBIOS_BAD_REGISTER_NUMBER);	\
+	if (PCI_##size##_BAD) return -EINVAL;	\
 	pci_lock_config(flags);						\
 	res = bus->ops->write(bus, devfn, pos, len, value);		\
 	pci_unlock_config(flags);					\
@@ -82,7 +82,7 @@ int pci_generic_config_read(struct pci_bus *bus, unsigned int devfn,
 	addr = bus->ops->map_bus(bus, devfn, where);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	if (size == 1)
@@ -92,7 +92,7 @@ int pci_generic_config_read(struct pci_bus *bus, unsigned int devfn,
 	else
 		*val = readl(addr);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(pci_generic_config_read);
 
@@ -103,7 +103,7 @@ int pci_generic_config_write(struct pci_bus *bus, unsigned int devfn,
 
 	addr = bus->ops->map_bus(bus, devfn, where);
 	if (!addr)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	if (size == 1)
 		writeb(val, addr);
@@ -112,7 +112,7 @@ int pci_generic_config_write(struct pci_bus *bus, unsigned int devfn,
 	else
 		writel(val, addr);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(pci_generic_config_write);
 
@@ -124,7 +124,7 @@ int pci_generic_config_read32(struct pci_bus *bus, unsigned int devfn,
 	addr = bus->ops->map_bus(bus, devfn, where & ~0x3);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	*val = readl(addr);
@@ -132,7 +132,7 @@ int pci_generic_config_read32(struct pci_bus *bus, unsigned int devfn,
 	if (size <= 2)
 		*val = (*val >> (8 * (where & 3))) & ((1 << (size * 8)) - 1);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(pci_generic_config_read32);
 
@@ -144,11 +144,11 @@ int pci_generic_config_write32(struct pci_bus *bus, unsigned int devfn,
 
 	addr = bus->ops->map_bus(bus, devfn, where & ~0x3);
 	if (!addr)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	if (size == 4) {
 		writel(val, addr);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	/*
@@ -169,7 +169,7 @@ int pci_generic_config_write32(struct pci_bus *bus, unsigned int devfn,
 	tmp |= val << ((where & 0x3) * 8);
 	writel(tmp, addr);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(pci_generic_config_write32);
 
@@ -218,7 +218,7 @@ static noinline void pci_wait_cfg(struct pci_dev *dev)
 int pci_user_read_config_##size						\
 	(struct pci_dev *dev, int pos, type *val)			\
 {									\
-	int ret = PCIBIOS_SUCCESSFUL;					\
+	int ret = 0;					\
 	u32 data = -1;							\
 	if (PCI_##size##_BAD)						\
 		return -EINVAL;						\
@@ -238,7 +238,7 @@ EXPORT_SYMBOL_GPL(pci_user_read_config_##size);
 int pci_user_write_config_##size					\
 	(struct pci_dev *dev, int pos, type val)			\
 {									\
-	int ret = PCIBIOS_SUCCESSFUL;					\
+	int ret = 0;					\
 	if (PCI_##size##_BAD)						\
 		return -EINVAL;						\
 	raw_spin_lock_irq(&pci_lock);				\
@@ -524,7 +524,7 @@ int pci_read_config_byte(const struct pci_dev *dev, int where, u8 *val)
 {
 	if (pci_dev_is_disconnected(dev)) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 	return pci_bus_read_config_byte(dev->bus, dev->devfn, where, val);
 }
@@ -534,7 +534,7 @@ int pci_read_config_word(const struct pci_dev *dev, int where, u16 *val)
 {
 	if (pci_dev_is_disconnected(dev)) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 	return pci_bus_read_config_word(dev->bus, dev->devfn, where, val);
 }
@@ -545,7 +545,7 @@ int pci_read_config_dword(const struct pci_dev *dev, int where,
 {
 	if (pci_dev_is_disconnected(dev)) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 	return pci_bus_read_config_dword(dev->bus, dev->devfn, where, val);
 }
@@ -554,7 +554,7 @@ EXPORT_SYMBOL(pci_read_config_dword);
 int pci_write_config_byte(const struct pci_dev *dev, int where, u8 val)
 {
 	if (pci_dev_is_disconnected(dev))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	return pci_bus_write_config_byte(dev->bus, dev->devfn, where, val);
 }
 EXPORT_SYMBOL(pci_write_config_byte);
@@ -562,7 +562,7 @@ EXPORT_SYMBOL(pci_write_config_byte);
 int pci_write_config_word(const struct pci_dev *dev, int where, u16 val)
 {
 	if (pci_dev_is_disconnected(dev))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	return pci_bus_write_config_word(dev->bus, dev->devfn, where, val);
 }
 EXPORT_SYMBOL(pci_write_config_word);
@@ -571,7 +571,7 @@ int pci_write_config_dword(const struct pci_dev *dev, int where,
 					 u32 val)
 {
 	if (pci_dev_is_disconnected(dev))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	return pci_bus_write_config_dword(dev->bus, dev->devfn, where, val);
 }
 EXPORT_SYMBOL(pci_write_config_dword);

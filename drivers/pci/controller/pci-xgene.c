@@ -166,9 +166,8 @@ static int xgene_pcie_config_read32(struct pci_bus *bus, unsigned int devfn,
 {
 	struct xgene_pcie_port *port = pcie_bus_to_port(bus);
 
-	if (pci_generic_config_read32(bus, devfn, where & ~0x3, 4, val) !=
-	    PCIBIOS_SUCCESSFUL)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+	if (pci_generic_config_read32(bus, devfn, where & ~0x3, 4, val) != 0)
+		return 0;
 
 	/*
 	 * The v1 controller has a bug in its Configuration Request
@@ -187,7 +186,7 @@ static int xgene_pcie_config_read32(struct pci_bus *bus, unsigned int devfn,
 	if (size <= 2)
 		*val = (*val >> (8 * (where & 3))) & ((1 << (size * 8)) - 1);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 #endif
 

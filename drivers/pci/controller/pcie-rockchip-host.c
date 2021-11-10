@@ -109,7 +109,7 @@ static int rockchip_pcie_rd_own_conf(struct rockchip_pcie *rockchip,
 
 	if (!IS_ALIGNED((uintptr_t)addr, size)) {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
 	if (size == 4) {
@@ -120,9 +120,9 @@ static int rockchip_pcie_rd_own_conf(struct rockchip_pcie *rockchip,
 		*val = readb(addr);
 	} else {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int rockchip_pcie_wr_own_conf(struct rockchip_pcie *rockchip,
@@ -136,7 +136,7 @@ static int rockchip_pcie_wr_own_conf(struct rockchip_pcie *rockchip,
 
 	if (size == 4) {
 		writel(val, addr);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	mask = ~(((1 << (size * 8)) - 1) << ((where & 0x3) * 8));
@@ -150,7 +150,7 @@ static int rockchip_pcie_wr_own_conf(struct rockchip_pcie *rockchip,
 	tmp |= val << ((where & 0x3) * 8);
 	writel(tmp, addr);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int rockchip_pcie_rd_other_conf(struct rockchip_pcie *rockchip,
@@ -163,7 +163,7 @@ static int rockchip_pcie_rd_other_conf(struct rockchip_pcie *rockchip,
 
 	if (!IS_ALIGNED((uintptr_t)addr, size)) {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
 	if (pci_is_root_bus(bus->parent))
@@ -181,9 +181,9 @@ static int rockchip_pcie_rd_other_conf(struct rockchip_pcie *rockchip,
 		*val = readb(addr);
 	} else {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int rockchip_pcie_wr_other_conf(struct rockchip_pcie *rockchip,
@@ -195,7 +195,7 @@ static int rockchip_pcie_wr_other_conf(struct rockchip_pcie *rockchip,
 	addr = rockchip->reg_base + PCIE_ECAM_OFFSET(bus->number, devfn, where);
 
 	if (!IS_ALIGNED((uintptr_t)addr, size))
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	if (pci_is_root_bus(bus->parent))
 		rockchip_pcie_cfg_configuration_accesses(rockchip,
@@ -211,9 +211,9 @@ static int rockchip_pcie_wr_other_conf(struct rockchip_pcie *rockchip,
 	else if (size == 1)
 		writeb(val, addr);
 	else
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int rockchip_pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
@@ -223,7 +223,7 @@ static int rockchip_pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
 
 	if (!rockchip_pcie_valid_device(rockchip, bus, PCI_SLOT(devfn))) {
 		*val = 0xffffffff;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	if (pci_is_root_bus(bus))
@@ -239,7 +239,7 @@ static int rockchip_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 	struct rockchip_pcie *rockchip = bus->sysdata;
 
 	if (!rockchip_pcie_valid_device(rockchip, bus, PCI_SLOT(devfn)))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	if (pci_is_root_bus(bus))
 		return rockchip_pcie_wr_own_conf(rockchip, where, size, val);

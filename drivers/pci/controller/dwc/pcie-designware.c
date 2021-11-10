@@ -100,7 +100,7 @@ int dw_pcie_read(void __iomem *addr, int size, u32 *val)
 {
 	if (!IS_ALIGNED((uintptr_t)addr, size)) {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
 	if (size == 4) {
@@ -111,17 +111,17 @@ int dw_pcie_read(void __iomem *addr, int size, u32 *val)
 		*val = readb(addr);
 	} else {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(dw_pcie_read);
 
 int dw_pcie_write(void __iomem *addr, int size, u32 val)
 {
 	if (!IS_ALIGNED((uintptr_t)addr, size))
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	if (size == 4)
 		writel(val, addr);
@@ -130,9 +130,9 @@ int dw_pcie_write(void __iomem *addr, int size, u32 val)
 	else if (size == 1)
 		writeb(val, addr);
 	else
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(dw_pcie_write);
 

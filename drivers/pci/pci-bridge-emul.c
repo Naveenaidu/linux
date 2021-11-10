@@ -330,12 +330,12 @@ int pci_bridge_emul_conf_read(struct pci_bridge_emul *bridge, int where,
 
 	if (bridge->has_pcie && reg >= PCI_CAP_PCIE_END) {
 		*value = 0;
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	if (!bridge->has_pcie && reg >= PCI_BRIDGE_CONF_END) {
 		*value = 0;
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	if (bridge->has_pcie && reg >= PCI_CAP_PCIE_START) {
@@ -369,9 +369,9 @@ int pci_bridge_emul_conf_read(struct pci_bridge_emul *bridge, int where,
 	else if (size == 2)
 		*value = (*value >> (8 * (where & 3))) & 0xffff;
 	else if (size != 4)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(pci_bridge_emul_conf_read);
 
@@ -391,10 +391,10 @@ int pci_bridge_emul_conf_write(struct pci_bridge_emul *bridge, int where,
 	const struct pci_bridge_reg_behavior *behavior;
 
 	if (bridge->has_pcie && reg >= PCI_CAP_PCIE_END)
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 
 	if (!bridge->has_pcie && reg >= PCI_BRIDGE_CONF_END)
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 
 	shift = (where & 0x3) * 8;
 
@@ -405,10 +405,10 @@ int pci_bridge_emul_conf_write(struct pci_bridge_emul *bridge, int where,
 	else if (size == 1)
 		mask = 0xff << shift;
 	else
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	ret = pci_bridge_emul_conf_read(bridge, reg, 4, &old);
-	if (ret != PCIBIOS_SUCCESSFUL)
+	if (ret != 0)
 		return ret;
 
 	if (bridge->has_pcie && reg >= PCI_CAP_PCIE_START) {
@@ -449,6 +449,6 @@ int pci_bridge_emul_conf_write(struct pci_bridge_emul *bridge, int where,
 	if (write_op)
 		write_op(bridge, reg, old, new, mask);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 EXPORT_SYMBOL_GPL(pci_bridge_emul_conf_write);

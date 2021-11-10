@@ -27,7 +27,7 @@ static int hisi_pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
 	if (bus->number == cfg->busr.start) {
 		/* access only one slot on each root port */
 		if (dev > 0)
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 		else
 			return pci_generic_config_read32(bus, devfn, where,
 							 size, val);
@@ -45,7 +45,7 @@ static int hisi_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 	if (bus->number == cfg->busr.start) {
 		/* access only one slot on each root port */
 		if (dev > 0)
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 		else
 			return pci_generic_config_write32(bus, devfn, where,
 							  size, val);

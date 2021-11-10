@@ -200,7 +200,7 @@ int pci_status_get_and_clear_errors(struct pci_dev *pdev)
 	int ret;
 
 	ret = pci_read_config_word(pdev, PCI_STATUS, &status);
-	if (ret != PCIBIOS_SUCCESSFUL)
+	if (ret != 0)
 		return -EIO;
 
 	status &= PCI_STATUS_ERROR_BITS;
@@ -552,7 +552,7 @@ u16 pci_find_next_ext_capability(struct pci_dev *dev, u16 start, int cap)
 	if (start)
 		pos = start;
 
-	if (pci_read_config_dword(dev, pos, &header) != PCIBIOS_SUCCESSFUL)
+	if (pci_read_config_dword(dev, pos, &header) != 0)
 		return 0;
 
 	/*
@@ -570,7 +570,7 @@ u16 pci_find_next_ext_capability(struct pci_dev *dev, u16 start, int cap)
 		if (pos < PCI_CFG_SPACE_SIZE)
 			break;
 
-		if (pci_read_config_dword(dev, pos, &header) != PCIBIOS_SUCCESSFUL)
+		if (pci_read_config_dword(dev, pos, &header) != 0)
 			break;
 	}
 
@@ -646,7 +646,7 @@ static u8 __pci_find_next_ht_cap(struct pci_dev *dev, u8 pos, int ht_cap)
 				      PCI_CAP_ID_HT, &ttl);
 	while (pos) {
 		rc = pci_read_config_byte(dev, pos + 3, &cap);
-		if (rc != PCIBIOS_SUCCESSFUL)
+		if (rc != 0)
 			return 0;
 
 		if ((cap & mask) == ht_cap)
@@ -723,7 +723,7 @@ u16 pci_find_vsec_capability(struct pci_dev *dev, u16 vendor, int cap)
 	while ((vsec = pci_find_next_ext_capability(dev, vsec,
 						     PCI_EXT_CAP_ID_VNDR))) {
 		if (pci_read_config_dword(dev, vsec + PCI_VNDR_HEADER,
-					  &header) == PCIBIOS_SUCCESSFUL &&
+					  &header) == 0 &&
 		    PCI_VNDR_HEADER_ID(header) == cap)
 			return vsec;
 	}

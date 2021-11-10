@@ -204,7 +204,7 @@ static int faraday_raw_pci_read_config(struct faraday_pci *p, int bus_number,
 	else if (size == 2)
 		*value = (*value >> (8 * (config & 3))) & 0xFFFF;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int faraday_pci_read_config(struct pci_bus *bus, unsigned int fn,
@@ -223,7 +223,7 @@ static int faraday_raw_pci_write_config(struct faraday_pci *p, int bus_number,
 					 unsigned int fn, int config, int size,
 					 u32 value)
 {
-	int ret = PCIBIOS_SUCCESSFUL;
+	int ret = 0;
 
 	writel(PCI_CONF_BUS(bus_number) |
 			PCI_CONF_DEVICE(PCI_SLOT(fn)) |
@@ -243,7 +243,7 @@ static int faraday_raw_pci_write_config(struct faraday_pci *p, int bus_number,
 		writeb(value, p->base + FTPCI_DATA + (config & 3));
 		break;
 	default:
-		ret = PCIBIOS_BAD_REGISTER_NUMBER;
+		ret = -EFAULT;
 	}
 
 	return ret;

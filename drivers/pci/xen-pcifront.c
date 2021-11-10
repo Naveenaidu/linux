@@ -78,24 +78,24 @@ static inline void pcifront_init_sd(struct pcifront_sd *sd,
 static DEFINE_SPINLOCK(pcifront_dev_lock);
 static struct pcifront_device *pcifront_dev;
 
-static int errno_to_pcibios_err(int errno)
+static int xen_err_to_errno(int errno)
 {
 	switch (errno) {
 	case XEN_PCI_ERR_success:
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 
 	case XEN_PCI_ERR_dev_not_found:
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	case XEN_PCI_ERR_invalid_offset:
 	case XEN_PCI_ERR_op_failed:
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	case XEN_PCI_ERR_not_implemented:
-		return PCIBIOS_FUNC_NOT_SUPPORTED;
+		return -ENOENT;
 
 	case XEN_PCI_ERR_access_denied:
-		return PCIBIOS_SET_FAILED;
+		return -EIO;
 	}
 	return errno;
 }
@@ -206,7 +206,7 @@ static int pcifront_bus_read(struct pci_bus *bus, unsigned int devfn,
 		*val = 0;
 	}
 
-	return errno_to_pcibios_err(err);
+	return xen_err_to_errno(err);
 }
 
 /* Access to this function is spinlocked in drivers/pci/access.c */
@@ -230,7 +230,7 @@ static int pcifront_bus_write(struct pci_bus *bus, unsigned int devfn,
 		pci_domain_nr(bus), bus->number,
 		PCI_SLOT(devfn), PCI_FUNC(devfn), where, size, val);
 
-	return errno_to_pcibios_err(do_pci_op(pdev, &op));
+	return xen_err_to_errno(do_pci_op(pdev, &op));
 }
 
 static struct pci_ops pcifront_bus_ops = {

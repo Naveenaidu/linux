@@ -305,7 +305,7 @@ static int meson_pcie_rd_own_conf(struct pci_bus *bus, u32 devfn,
 	int ret;
 
 	ret = pci_generic_config_read(bus, devfn, where, size, val);
-	if (ret != PCIBIOS_SUCCESSFUL)
+	if (ret != 0)
 		return ret;
 
 	/*
@@ -322,7 +322,7 @@ static int meson_pcie_rd_own_conf(struct pci_bus *bus, u32 devfn,
 	else if (where == PCI_CLASS_DEVICE + 1 && size == 1)
 		*val = (PCI_CLASS_BRIDGE_PCI >> 8) & 0xff;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static struct pci_ops meson_pci_ops = {

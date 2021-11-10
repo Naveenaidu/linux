@@ -221,18 +221,18 @@ static int tlp_read_packet(struct altera_pcie *pcie, u32 *value)
 
 			if (ctrl & RP_RXCPL_EOP) {
 				if (comp_status)
-					return PCIBIOS_DEVICE_NOT_FOUND;
+					return -ENODEV;
 
 				if (value)
 					*value = reg0;
 
-				return PCIBIOS_SUCCESSFUL;
+				return 0;
 			}
 		}
 		udelay(5);
 	}
 
-	return PCIBIOS_DEVICE_NOT_FOUND;
+	return -ENODEV;
 }
 
 static int s10_tlp_read_packet(struct altera_pcie *pcie, u32 *value)
@@ -256,7 +256,7 @@ static int s10_tlp_read_packet(struct altera_pcie *pcie, u32 *value)
 
 	/* SOP detection failed, return error */
 	if (count == TLP_LOOP)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	count = 1;
 
@@ -267,19 +267,19 @@ static int s10_tlp_read_packet(struct altera_pcie *pcie, u32 *value)
 		if (ctrl & RP_RXCPL_EOP) {
 			comp_status = TLP_COMP_STATUS(dw[1]);
 			if (comp_status)
-				return PCIBIOS_DEVICE_NOT_FOUND;
+				return -ENODEV;
 
 			if (value && TLP_BYTE_COUNT(dw[1]) == sizeof(u32) &&
 			    count == 4)
 				*value = dw[3];
 
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 	}
 
 	dev_warn(dev, "Malformed TLP packet\n");
 
-	return PCIBIOS_DEVICE_NOT_FOUND;
+	return -ENODEV;
 }
 
 static void tlp_write_packet(struct altera_pcie *pcie, u32 *headers,
@@ -367,7 +367,7 @@ static int tlp_cfg_dword_write(struct altera_pcie *pcie, u8 bus, u32 devfn,
 						    value, false);
 
 	ret = pcie->pcie_data->ops->tlp_read_pkt(pcie, NULL);
-	if (ret != PCIBIOS_SUCCESSFUL)
+	if (ret != 0)
 		return ret;
 
 	/*
@@ -377,7 +377,7 @@ static int tlp_cfg_dword_write(struct altera_pcie *pcie, u8 bus, u32 devfn,
 	if ((bus == pcie->root_bus_nr) && (where == PCI_PRIMARY_BUS))
 		pcie->root_bus_nr = (u8)(value);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int s10_rp_read_cfg(struct altera_pcie *pcie, int where,
@@ -397,7 +397,7 @@ static int s10_rp_read_cfg(struct altera_pcie *pcie, int where,
 		break;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int s10_rp_write_cfg(struct altera_pcie *pcie, u8 busno,
@@ -424,7 +424,7 @@ static int s10_rp_write_cfg(struct altera_pcie *pcie, u8 busno,
 	if (busno == pcie->root_bus_nr && where == PCI_PRIMARY_BUS)
 		pcie->root_bus_nr = value & 0xff;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int _altera_pcie_cfg_read(struct altera_pcie *pcie, u8 busno,
@@ -453,7 +453,7 @@ static int _altera_pcie_cfg_read(struct altera_pcie *pcie, u8 busno,
 
 	ret = tlp_cfg_dword_read(pcie, busno, devfn,
 				 (where & ~DWORD_MASK), byte_en, &data);
-	if (ret != PCIBIOS_SUCCESSFUL)
+	if (ret != 0)
 		return ret;
 
 	switch (size) {
@@ -468,7 +468,7 @@ static int _altera_pcie_cfg_read(struct altera_pcie *pcie, u8 busno,
 		break;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int _altera_pcie_cfg_write(struct altera_pcie *pcie, u8 busno,
@@ -512,7 +512,7 @@ static int altera_pcie_cfg_read(struct pci_bus *bus, unsigned int devfn,
 
 	if (!altera_pcie_valid_device(pcie, bus, PCI_SLOT(devfn))) {
 		*value = 0xffffffff;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	return _altera_pcie_cfg_read(pcie, bus->number, devfn, where, size,
@@ -528,7 +528,7 @@ static int altera_pcie_cfg_write(struct pci_bus *bus, unsigned int devfn,
 		return PCIBIOS_BAD_REGISTER_NUMBER;
 
 	if (!altera_pcie_valid_device(pcie, bus, PCI_SLOT(devfn)))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	return _altera_pcie_cfg_write(pcie, bus->number, devfn, where, size,
 				     value);

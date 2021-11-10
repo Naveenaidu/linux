@@ -252,7 +252,7 @@ static int mvebu_pcie_hw_rd_conf(struct mvebu_pcie_port *port,
 		break;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0
 }
 
 static int mvebu_pcie_hw_wr_conf(struct mvebu_pcie_port *port,
@@ -275,10 +275,10 @@ static int mvebu_pcie_hw_wr_conf(struct mvebu_pcie_port *port,
 		writel(val, conf_data);
 		break;
 	default:
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0
 }
 
 /*
@@ -627,7 +627,7 @@ static int mvebu_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 
 	port = mvebu_pcie_find_port(pcie, bus, devfn);
 	if (!port)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	/* Access the emulated PCI-to-PCI bridge */
 	if (bus->number == 0)
@@ -635,7 +635,7 @@ static int mvebu_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 						  size, val);
 
 	if (!mvebu_pcie_link_up(port))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	/* Access the real PCIe interface */
 	ret = mvebu_pcie_hw_wr_conf(port, bus, devfn,
@@ -655,7 +655,7 @@ static int mvebu_pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
 	port = mvebu_pcie_find_port(pcie, bus, devfn);
 	if (!port) {
 		*val = 0xffffffff;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	/* Access the emulated PCI-to-PCI bridge */
@@ -665,7 +665,7 @@ static int mvebu_pcie_rd_conf(struct pci_bus *bus, u32 devfn, int where,
 
 	if (!mvebu_pcie_link_up(port)) {
 		*val = 0xffffffff;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	/* Access the real PCIe interface */

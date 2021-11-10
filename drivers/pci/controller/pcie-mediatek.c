@@ -273,12 +273,12 @@ static int mtk_pcie_check_cfg_cpld(struct mtk_pcie_port *port)
 					!(val & APP_CFG_REQ), 10,
 					100 * USEC_PER_MSEC);
 	if (err)
-		return PCIBIOS_SET_FAILED;
+		return -EIO;
 
 	if (readl(port->base + PCIE_APP_TLP_REQ) & APP_CPL_STATUS)
-		return PCIBIOS_SET_FAILED;
+		return -EIO;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int mtk_pcie_hw_rd_cfg(struct mtk_pcie_port *port, u32 bus, u32 devfn,
@@ -300,7 +300,7 @@ static int mtk_pcie_hw_rd_cfg(struct mtk_pcie_port *port, u32 bus, u32 devfn,
 
 	/* Check completion status */
 	if (mtk_pcie_check_cfg_cpld(port))
-		return PCIBIOS_SET_FAILED;
+		return -EIO;
 
 	/* Read cpld payload of Cfgrd */
 	*val = readl(port->base + PCIE_CFG_RDATA);
@@ -310,7 +310,7 @@ static int mtk_pcie_hw_rd_cfg(struct mtk_pcie_port *port, u32 bus, u32 devfn,
 	else if (size == 2)
 		*val = (*val >> (8 * (where & 3))) & 0xffff;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int mtk_pcie_hw_wr_cfg(struct mtk_pcie_port *port, u32 bus, u32 devfn,
@@ -370,7 +370,7 @@ static int mtk_pcie_config_read(struct pci_bus *bus, unsigned int devfn,
 	port = mtk_pcie_find_port(bus, devfn);
 	if (!port) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	ret = mtk_pcie_hw_rd_cfg(port, bn, devfn, where, size, val);
@@ -388,7 +388,7 @@ static int mtk_pcie_config_write(struct pci_bus *bus, unsigned int devfn,
 
 	port = mtk_pcie_find_port(bus, devfn);
 	if (!port)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	return mtk_pcie_hw_wr_cfg(port, bn, devfn, where, size, val);
 }

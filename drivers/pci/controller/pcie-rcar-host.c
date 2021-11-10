@@ -108,14 +108,14 @@ static int rcar_pcie_config_access(struct rcar_pcie_host *host,
 	 */
 	if (pci_is_root_bus(bus)) {
 		if (dev != 0)
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 
 		if (access_type == RCAR_PCI_ACCESS_READ)
 			*data = rcar_pci_read_reg(pcie, PCICONF(index));
 		else
 			rcar_pci_write_reg(pcie, *data, PCICONF(index));
 
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	/* Clear errors */
@@ -133,12 +133,12 @@ static int rcar_pcie_config_access(struct rcar_pcie_host *host,
 
 	/* Check for errors */
 	if (rcar_pci_read_reg(pcie, PCIEERRFR) & UNSUPPORTED_REQUEST)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	/* Check for master and target aborts */
 	if (rcar_read_conf(pcie, RCONF(PCI_STATUS)) &
 		(PCI_STATUS_REC_MASTER_ABORT | PCI_STATUS_REC_TARGET_ABORT))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	if (access_type == RCAR_PCI_ACCESS_READ)
 		*data = rcar_pci_read_reg(pcie, PCIECDR);
@@ -148,7 +148,7 @@ static int rcar_pcie_config_access(struct rcar_pcie_host *host,
 	/* Disable the configuration access */
 	rcar_pci_write_reg(pcie, 0, PCIECCTLR);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int rcar_pcie_read_conf(struct pci_bus *bus, unsigned int devfn,
@@ -159,7 +159,7 @@ static int rcar_pcie_read_conf(struct pci_bus *bus, unsigned int devfn,
 
 	ret = rcar_pcie_config_access(host, RCAR_PCI_ACCESS_READ,
 				      bus, devfn, where, val);
-	if (ret != PCIBIOS_SUCCESSFUL) {
+	if (ret != 0) {
 		*val = 0xffffffff;
 		return ret;
 	}
@@ -186,7 +186,7 @@ static int rcar_pcie_write_conf(struct pci_bus *bus, unsigned int devfn,
 
 	ret = rcar_pcie_config_access(host, RCAR_PCI_ACCESS_READ,
 				      bus, devfn, where, &data);
-	if (ret != PCIBIOS_SUCCESSFUL)
+	if (ret != 0)
 		return ret;
 
 	dev_dbg(&bus->dev, "pcie-config-write: bus=%3d devfn=0x%04x where=0x%04x size=%d val=0x%08x\n",

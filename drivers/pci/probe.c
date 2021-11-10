@@ -1654,7 +1654,7 @@ static bool pci_ext_cfg_is_aliased(struct pci_dev *dev)
 
 	for (pos = PCI_CFG_SPACE_SIZE;
 	     pos < PCI_CFG_SPACE_EXP_SIZE; pos += PCI_CFG_SPACE_SIZE) {
-		if (pci_read_config_dword(dev, pos, &tmp) != PCIBIOS_SUCCESSFUL
+		if (pci_read_config_dword(dev, pos, &tmp) != 0
 		    || header != tmp)
 			return false;
 	}

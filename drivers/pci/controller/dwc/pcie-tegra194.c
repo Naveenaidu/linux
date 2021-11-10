@@ -548,7 +548,7 @@ static int tegra_pcie_dw_rd_own_conf(struct pci_bus *bus, u32 devfn, int where,
 	 */
 	if (!PCI_SLOT(devfn) && where == PORT_LOGIC_MSIX_DOORBELL) {
 		*val = 0x00000000;
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	return pci_generic_config_read(bus, devfn, where, size, val);
@@ -564,7 +564,7 @@ static int tegra_pcie_dw_wr_own_conf(struct pci_bus *bus, u32 devfn, int where,
 	 * So skip accessing it altogether
 	 */
 	if (!PCI_SLOT(devfn) && where == PORT_LOGIC_MSIX_DOORBELL)
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 
 	return pci_generic_config_write(bus, devfn, where, size, val);
 }

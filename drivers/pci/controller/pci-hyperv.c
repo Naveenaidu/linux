@@ -830,8 +830,8 @@ static void _hv_pcifront_write_config(struct hv_pci_dev *hpdev, int where,
  * @size: Byte/word/dword
  * @val: Value to be read
  *
- * Return: PCIBIOS_SUCCESSFUL on success
- *	   PCIBIOS_DEVICE_NOT_FOUND on failure
+ * Return: 0 on success
+ *	   -ENODEV on failure
  */
 static int hv_pcifront_read_config(struct pci_bus *bus, unsigned int devfn,
 				   int where, int size, u32 *val)
@@ -842,12 +842,12 @@ static int hv_pcifront_read_config(struct pci_bus *bus, unsigned int devfn,
 
 	hpdev = get_pcichild_wslot(hbus, devfn_to_wslot(devfn));
 	if (!hpdev)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	_hv_pcifront_read_config(hpdev, where, size, val);
 
 	put_pcichild(hpdev);
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 /**
@@ -858,8 +858,8 @@ static int hv_pcifront_read_config(struct pci_bus *bus, unsigned int devfn,
  * @size: Byte/word/dword
  * @val: Value to be written to device
  *
- * Return: PCIBIOS_SUCCESSFUL on success
- *	   PCIBIOS_DEVICE_NOT_FOUND on failure
+ * Return: 0 on success
+ *	   -ENODEV on failure
  */
 static int hv_pcifront_write_config(struct pci_bus *bus, unsigned int devfn,
 				    int where, int size, u32 val)
@@ -870,12 +870,12 @@ static int hv_pcifront_write_config(struct pci_bus *bus, unsigned int devfn,
 
 	hpdev = get_pcichild_wslot(hbus, devfn_to_wslot(devfn));
 	if (!hpdev)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	_hv_pcifront_write_config(hpdev, where, size, val);
 
 	put_pcichild(hpdev);
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 /* PCIe operations */

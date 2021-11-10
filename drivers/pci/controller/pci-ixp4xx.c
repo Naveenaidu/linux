@@ -244,11 +244,11 @@ static int ixp4xx_crp_read_config(struct ixp4xx_pci *p, int where, int size,
 	default:
 		/* Should not happen */
 		dev_err(p->dev, "%s illegal size\n", __func__);
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 	*value = val;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0
 }
 
 static int ixp4xx_crp_write_config(struct ixp4xx_pci *p, int where, int size,
@@ -259,7 +259,7 @@ static int ixp4xx_crp_write_config(struct ixp4xx_pci *p, int where, int size,
 	n = where % 4;
 	cmd = ixp4xx_crp_byte_lane_enable_bits(n, size);
 	if (cmd == 0xffffffff)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	cmd |= where & ~3;
 	cmd |= CRP_AD_CBE_WRITE;
 
@@ -271,7 +271,7 @@ static int ixp4xx_crp_write_config(struct ixp4xx_pci *p, int where, int size,
 	ixp4xx_writel(p, IXP4XX_PCI_CRP_AD_CBE, cmd);
 	ixp4xx_writel(p, IXP4XX_PCI_CRP_WDATA, val);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0
 }
 
 /*
@@ -301,7 +301,7 @@ static int ixp4xx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	n = where % 4;
 	cmd = ixp4xx_byte_lane_enable_bits(n, size);
 	if (cmd == 0xffffffff)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	addr = ixp4xx_config_addr(bus_num, devfn, where);
 	cmd |= NP_CMD_CONFIGREAD;
@@ -310,7 +310,7 @@ static int ixp4xx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 
 	ret = ixp4xx_pci_read_indirect(p, addr, cmd, &val);
 	if (ret)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	val >>= (8*n);
 	switch (size) {
@@ -329,11 +329,11 @@ static int ixp4xx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	default:
 		/* Should not happen */
 		dev_err(p->dev, "%s illegal size\n", __func__);
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 	*value = val;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0
 }
 
 static int ixp4xx_pci_write_config(struct pci_bus *bus,  unsigned int devfn,
@@ -347,7 +347,7 @@ static int ixp4xx_pci_write_config(struct pci_bus *bus,  unsigned int devfn,
 	n = where % 4;
 	cmd = ixp4xx_byte_lane_enable_bits(n, size);
 	if (cmd == 0xffffffff)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	addr = ixp4xx_config_addr(bus_num, devfn, where);
 	cmd |= NP_CMD_CONFIGWRITE;
@@ -358,9 +358,9 @@ static int ixp4xx_pci_write_config(struct pci_bus *bus,  unsigned int devfn,
 
 	ret = ixp4xx_pci_write_indirect(p, addr, cmd, val);
 	if (ret)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0
 }
 
 static struct pci_ops ixp4xx_pci_ops = {

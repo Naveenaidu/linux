@@ -1028,7 +1028,7 @@ static int advk_pcie_rd_conf(struct pci_bus *bus, u32 devfn,
 
 	if (!advk_pcie_valid_device(pcie, bus, devfn)) {
 		*val = 0xffffffff;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	if (pci_is_root_bus(bus))
@@ -1088,7 +1088,7 @@ static int advk_pcie_rd_conf(struct pci_bus *bus, u32 devfn,
 	else if (size == 2)
 		*val = (*val >> (8 * (where & 3))) & 0xffff;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 
 try_crs:
 	/*
@@ -1097,12 +1097,12 @@ try_crs:
 	 */
 	if (allow_crs) {
 		*val = CFG_RD_CRS_VAL;
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 fail:
 	*val = 0xffffffff;
-	return PCIBIOS_SET_FAILED;
+	return -EIO;
 }
 
 static int advk_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
@@ -1116,17 +1116,17 @@ static int advk_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 	int ret;
 
 	if (!advk_pcie_valid_device(pcie, bus, devfn))
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	if (pci_is_root_bus(bus))
 		return pci_bridge_emul_conf_write(&pcie->bridge, where,
 						  size, val);
 
 	if (where % size)
-		return PCIBIOS_SET_FAILED;
+		return -EIO;
 
 	if (advk_pcie_pio_is_running(pcie))
-		return PCIBIOS_SET_FAILED;
+		return -EIO;
 
 	/* Program the control register */
 	reg = advk_readl(pcie, PIO_CTRL);
@@ -1161,14 +1161,14 @@ static int advk_pcie_wr_conf(struct pci_bus *bus, u32 devfn,
 
 		ret = advk_pcie_wait_pio(pcie);
 		if (ret < 0)
-			return PCIBIOS_SET_FAILED;
+			return -EIO;
 
 		retry_count += ret;
 
 		ret = advk_pcie_check_pio_status(pcie, false, NULL);
 	} while (ret == -EAGAIN && retry_count < PIO_RETRY_CNT);
 
-	return ret < 0 ? PCIBIOS_SET_FAILED : PCIBIOS_SUCCESSFUL;
+	return ret < 0 ? (-EIO) : 0;
 }
 
 static struct pci_ops advk_pcie_ops = {

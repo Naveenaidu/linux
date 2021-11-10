@@ -578,7 +578,7 @@ static int iproc_pcie_config_read(struct pci_bus *bus, unsigned int devfn,
 	/* root complex access */
 	if (busno == 0) {
 		ret = pci_generic_config_read32(bus, devfn, where, size, val);
-		if (ret == PCIBIOS_SUCCESSFUL)
+		if (ret == 0)
 			iproc_pcie_fix_cap(pcie, where, val);
 
 		return ret;
@@ -587,7 +587,7 @@ static int iproc_pcie_config_read(struct pci_bus *bus, unsigned int devfn,
 	cfg_data_p = iproc_pcie_map_ep_cfg_reg(pcie, busno, devfn, where);
 
 	if (!cfg_data_p)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	data = iproc_pcie_cfg_retry(pcie, cfg_data_p);
 
@@ -612,9 +612,9 @@ static int iproc_pcie_config_read(struct pci_bus *bus, unsigned int devfn,
 	    (where & CFG_ADDR_REG_NUM_MASK) == PCI_VENDOR_ID)
 		if ((*val & DEVICE_ID_MASK) ==
 		    (PCI_DEVICE_ID_NX2_57810 << DEVICE_ID_SHIFT))
-			return PCIBIOS_FUNC_NOT_SUPPORTED;
+			return -ENOENT;
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 /*
@@ -661,7 +661,7 @@ static int iproc_pci_raw_config_read32(struct iproc_pcie *pcie,
 	addr = iproc_pcie_map_cfg_bus(pcie, 0, devfn, where & ~0x3);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	*val = readl(addr);
@@ -669,7 +669,7 @@ static int iproc_pci_raw_config_read32(struct iproc_pcie *pcie,
 	if (size <= 2)
 		*val = (*val >> (8 * (where & 3))) & ((1 << (size * 8)) - 1);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int iproc_pci_raw_config_write32(struct iproc_pcie *pcie,
@@ -681,11 +681,11 @@ static int iproc_pci_raw_config_write32(struct iproc_pcie *pcie,
 
 	addr = iproc_pcie_map_cfg_bus(pcie, 0, devfn, where & ~0x3);
 	if (!addr)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	if (size == 4) {
 		writel(val, addr);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	mask = ~(((1 << (size * 8)) - 1) << ((where & 0x3) * 8));
@@ -693,7 +693,7 @@ static int iproc_pci_raw_config_write32(struct iproc_pcie *pcie,
 	tmp |= val << ((where & 0x3) * 8);
 	writel(tmp, addr);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int iproc_pcie_config_read32(struct pci_bus *bus, unsigned int devfn,

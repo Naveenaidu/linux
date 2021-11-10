@@ -43,7 +43,7 @@ static int thunder_pem_bridge_read(struct pci_bus *bus, unsigned int devfn,
 
 	if (devfn != 0 || where >= 2048) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	/*
@@ -133,7 +133,7 @@ static int thunder_pem_bridge_read(struct pci_bus *bus, unsigned int devfn,
 		break;
 	}
 	*val = read_val;
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int thunder_pem_config_read(struct pci_bus *bus, unsigned int devfn,
@@ -143,7 +143,7 @@ static int thunder_pem_config_read(struct pci_bus *bus, unsigned int devfn,
 
 	if (bus->number < cfg->busr.start ||
 	    bus->number > cfg->busr.end)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	/*
 	 * The first device on the bus is the PEM PCIe bridge.
@@ -223,7 +223,7 @@ static int thunder_pem_bridge_write(struct pci_bus *bus, unsigned int devfn,
 
 
 	if (devfn != 0 || where >= 2048)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 
 	/*
 	 * 32-bit accesses only.  If the write is for a size smaller
@@ -282,7 +282,7 @@ static int thunder_pem_bridge_write(struct pci_bus *bus, unsigned int devfn,
 	 */
 	write_val = (((u64)val) << 32) | where_aligned;
 	writeq(write_val, pem_pci->pem_reg_base + PEM_CFG_WR);
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int thunder_pem_config_write(struct pci_bus *bus, unsigned int devfn,
@@ -292,7 +292,7 @@ static int thunder_pem_config_write(struct pci_bus *bus, unsigned int devfn,
 
 	if (bus->number < cfg->busr.start ||
 	    bus->number > cfg->busr.end)
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	/*
 	 * The first device on the bus is the PEM PCIe bridge.
 	 * Special case its config access.

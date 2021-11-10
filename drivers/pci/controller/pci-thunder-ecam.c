@@ -37,19 +37,19 @@ static int handle_ea_bar(u32 e0, int bar, struct pci_bus *bus,
 
 	if (where_a == 0) {
 		set_val(e0, where, size, val);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 	if (where_a == 0x4) {
 		addr = bus->ops->map_bus(bus, devfn, bar); /* BAR 0 */
 		if (!addr) {
 			*val = ~0;
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 		}
 		v = readl(addr);
 		v &= ~0xf;
 		v |= 2; /* EA entry-1. Base-L */
 		set_val(v, where, size, val);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 	if (where_a == 0x8) {
 		u32 barl_orig;
@@ -58,7 +58,7 @@ static int handle_ea_bar(u32 e0, int bar, struct pci_bus *bus,
 		addr = bus->ops->map_bus(bus, devfn, bar); /* BAR 0 */
 		if (!addr) {
 			*val = ~0;
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 		}
 		barl_orig = readl(addr + 0);
 		writel(0xffffffff, addr + 0);
@@ -68,19 +68,19 @@ static int handle_ea_bar(u32 e0, int bar, struct pci_bus *bus,
 		v = ~barl_rb & ~3;
 		v |= 0xc; /* EA entry-2. Offset-L */
 		set_val(v, where, size, val);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 	if (where_a == 0xc) {
 		addr = bus->ops->map_bus(bus, devfn, bar + 4); /* BAR 1 */
 		if (!addr) {
 			*val = ~0;
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 		}
 		v = readl(addr); /* EA entry-3. Base-H */
 		set_val(v, where, size, val);
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
-	return PCIBIOS_DEVICE_NOT_FOUND;
+	return -ENODEV;
 }
 
 static int thunder_ecam_p2_config_read(struct pci_bus *bus, unsigned int devfn,
@@ -106,7 +106,7 @@ static int thunder_ecam_p2_config_read(struct pci_bus *bus, unsigned int devfn,
 	addr = bus->ops->map_bus(bus, devfn, where_a);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	v = readl(addr);
@@ -121,7 +121,7 @@ static int thunder_ecam_p2_config_read(struct pci_bus *bus, unsigned int devfn,
 	v |= node_bits;
 	set_val(v, where, size, val);
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
@@ -137,7 +137,7 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 	addr = bus->ops->map_bus(bus, devfn, 0xc);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	v = readl(addr);
@@ -148,7 +148,7 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 	addr = bus->ops->map_bus(bus, devfn, 8);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	class_rev = readl(addr);
@@ -172,13 +172,13 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 	     (where >= 0x1a4 && where < 0x1bc))) {
 		/* BAR or SR-IOV BAR */
 		*val = 0;
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 	}
 
 	addr = bus->ops->map_bus(bus, devfn, 0);
 	if (!addr) {
 		*val = ~0;
-		return PCIBIOS_DEVICE_NOT_FOUND;
+		return -ENODEV;
 	}
 
 	vendor_device = readl(addr);
@@ -198,7 +198,7 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 		addr = bus->ops->map_bus(bus, devfn, 0x70);
 		if (!addr) {
 			*val = ~0;
-			return PCIBIOS_DEVICE_NOT_FOUND;
+			return -ENODEV;
 		}
 		/* E_CAP */
 		v = readl(addr);
@@ -207,20 +207,20 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 		if (!has_msix && where_a == 0x70) {
 			v |= 0xbc00; /* next capability is EA at 0xbc */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xb0) {
 			addr = bus->ops->map_bus(bus, devfn, where_a);
 			if (!addr) {
 				*val = ~0;
-				return PCIBIOS_DEVICE_NOT_FOUND;
+				return -ENODEV;
 			}
 			v = readl(addr);
 			if (v & 0xff00)
 				pr_err("Bad MSIX cap header: %08x\n", v);
 			v |= 0xbc00; /* next capability is EA at 0xbc */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xbc) {
 			if (is_nic)
@@ -232,7 +232,7 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 			else
 				v = 0x10014; /* EA last in chain, 1 entry */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a >= 0xc0 && where_a < 0xd0)
 			/* EA entry-0. PP=0, BAR0 Size:3 */
@@ -270,14 +270,14 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 			addr = bus->ops->map_bus(bus, devfn, where_a);
 			if (!addr) {
 				*val = ~0;
-				return PCIBIOS_DEVICE_NOT_FOUND;
+				return -ENODEV;
 			}
 			v = readl(addr);
 			if (v & 0xff00)
 				pr_err("Bad PCIe cap header: %08x\n", v);
 			v |= 0xbc00; /* next capability is EA at 0xbc */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xbc) {
 			if (is_nic_bridge)
@@ -285,7 +285,7 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 			else
 				v = 0x00014; /* EA last in chain, no entries */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xc0) {
 			if (is_rsl_bridge || is_nic_bridge)
@@ -297,33 +297,33 @@ static int thunder_ecam_config_read(struct pci_bus *bus, unsigned int devfn,
 			else if (is_dfa_bridge)
 				v = 0x0404; /* subordinate:secondary = 4:4 */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xc4 && is_nic_bridge) {
 			/* Enabled, not-Write, SP=ff, PP=05, BEI=6, ES=4 */
 			v = 0x80ff0564;
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xc8 && is_nic_bridge) {
 			v = 0x00000002; /* Base-L 64-bit */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xcc && is_nic_bridge) {
 			v = 0xfffffffe; /* MaxOffset-L 64-bit */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xd0 && is_nic_bridge) {
 			v = 0x00008430; /* NIC Base-H */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 		if (where_a == 0xd4 && is_nic_bridge) {
 			v = 0x0000000f; /* MaxOffset-H */
 			set_val(v, where, size, val);
-			return PCIBIOS_SUCCESSFUL;
+			return 0;
 		}
 	}
 no_emulation:
@@ -340,7 +340,7 @@ static int thunder_ecam_config_write(struct pci_bus *bus, unsigned int devfn,
 	if ((where >= 0x10 && where < 0x2c) ||
 	    (where >= 0x1a4 && where < 0x1bc))
 		/* BAR or SR-IOV BAR */
-		return PCIBIOS_SUCCESSFUL;
+		return 0;
 
 	return pci_generic_config_write(bus, devfn, where, size, val);
 }

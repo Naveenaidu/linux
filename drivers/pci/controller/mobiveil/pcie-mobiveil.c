@@ -53,7 +53,7 @@ static int mobiveil_pcie_read(void __iomem *addr, int size, u32 *val)
 {
 	if ((uintptr_t)addr & (size - 1)) {
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
 	switch (size) {
@@ -68,16 +68,16 @@ static int mobiveil_pcie_read(void __iomem *addr, int size, u32 *val)
 		break;
 	default:
 		*val = 0;
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 static int mobiveil_pcie_write(void __iomem *addr, int size, u32 val)
 {
 	if ((uintptr_t)addr & (size - 1))
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 
 	switch (size) {
 	case 4:
@@ -90,10 +90,10 @@ static int mobiveil_pcie_write(void __iomem *addr, int size, u32 val)
 		writeb(val, addr);
 		break;
 	default:
-		return PCIBIOS_BAD_REGISTER_NUMBER;
+		return -EFAULT;
 	}
 
-	return PCIBIOS_SUCCESSFUL;
+	return 0;
 }
 
 u32 mobiveil_csr_read(struct mobiveil_pcie *pcie, u32 off, size_t size)
